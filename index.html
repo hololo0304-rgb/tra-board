@@ -259,7 +259,7 @@
             <div class="train-dest">開往 ${train.endingStationName}</div>
           </div>
           <div class="train-time-box">
-            <div class="scheduled-time">${train.scheduledDepartureTime}</div>
+            <div class="scheduled-time">${train.scheduledDepartureTime.substring(0, 5)}</div>
             <span class="status-tag ${delayClass}">${delayText}</span>
           </div>
         `;
