@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>交通生活小助手 - 台鐵與停車場</title>
+  <title>離我最近 - 台鐵即時列車看板</title>
   <style>
     :root {
       --bg-color: #f4f6f9;
@@ -15,226 +15,51 @@
       --delay-color: #dc3545;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding: 16px;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    header {
-      text-align: center;
-      padding: 12px 0 6px 0;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      color: var(--primary-color);
-      margin-bottom: 8px;
-    }
-
-    /* 分頁切換按鈕 (Tabs) */
-    .tab-container {
-      display: flex;
-      background: #e9ecef;
-      border-radius: 10px;
-      padding: 4px;
-      margin-bottom: 12px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: none;
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: var(--text-muted);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .tab-btn.active {
-      background: var(--card-bg);
-      color: var(--primary-color);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-
-    .station-badge {
-      display: inline-block;
-      background-color: #e3f2fd;
-      color: #0d47a1;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.9rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .refresh-btn {
-      display: block;
-      width: 100%;
-      margin-bottom: 16px;
-      padding: 12px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .refresh-btn:active {
-      opacity: 0.85;
-    }
-
-    #status-msg {
-      text-align: center;
-      padding: 20px;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-    }
-
-    .board-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      padding: 14px 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .info-box {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      max-width: 65%;
-    }
-
-    .main-title {
-      font-size: 1.05rem;
-      font-weight: bold;
-      color: #111;
-    }
-
-    .sub-title {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .right-box {
-      text-align: right;
-    }
-
-    .time-or-spaces {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: var(--text-main);
-    }
-
-    .status-tag {
-      display: inline-block;
-      font-size: 0.85rem;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; max-width: 500px; margin: 0 auto; }
+    header { text-align: center; padding: 16px 0; }
+    h1 { font-size: 1.4rem; color: var(--primary-color); margin-bottom: 6px; }
+    .station-badge { display: inline-block; background-color: #e3f2fd; color: #0d47a1; padding: 6px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; }
+    .refresh-btn { display: block; width: 100%; margin: 16px 0; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #status-msg { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; }
+    .board-list { display: flex; flex-direction: column; gap: 12px; }
+    .train-card { background-color: var(--card-bg); border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+    .train-info { display: flex; flex-direction: column; gap: 4px; }
+    .train-type { font-size: 1.1rem; font-weight: bold; color: #111; }
+    .train-dest { font-size: 0.9rem; color: var(--text-muted); }
+    .train-time-box { text-align: right; }
+    .scheduled-time { font-size: 1.1rem; font-weight: bold; color: var(--text-main); }
+    .status-tag { display: inline-block; font-size: 0.85rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
     .status-ontime { background-color: #d4edda; color: var(--on-time-color); }
     .status-delay { background-color: #f8d7da; color: var(--delay-color); }
-    .status-parking-has { background-color: #d4edda; color: var(--on-time-color); }
-    .status-parking-full { background-color: #f8d7da; color: var(--delay-color); }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid var(--primary-color);
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      animation: spin 1s linear infinite;
-      margin: 10px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; margin: 10px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🚗 交通即時資訊助手</h1>
-  </header>
-
-  <!-- 分頁切換選單 -->
-  <div class="tab-container">
-    <button id="tab-train" class="tab-btn active" onclick="switchTab('train')">🚆 台鐵列車看板</button>
-    <button id="tab-parking" class="tab-btn" onclick="switchTab('parking')">🅿️ 周邊即時車位</button>
-  </div>
-
-  <div style="text-align:center;">
+    <h1>🚆 台鐵即時列車看板</h1>
     <div id="station-info" class="station-badge">定位中...</div>
-  </div>
+  </header>
 
   <button class="refresh-btn" onclick="initLocation()">🔄 更新即時資訊</button>
 
   <div id="status-msg">
     <div class="spinner"></div>
-    正在存取 GPS 座標...
+    正在搜尋離你最近的車站...
   </div>
 
   <div id="board-container" class="board-list"></div>
 
   <script>
-    // 已自動設定你的 GAS 網址
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
 
-    let currentTab = 'train';
-    let currentLat = null;
-    let currentLng = null;
-
-    window.onload = function() {
-      initLocation();
-    };
-
-    function switchTab(tab) {
-      if (currentTab === tab) return;
-      currentTab = tab;
-      
-      document.getElementById('tab-train').classList.toggle('active', tab === 'train');
-      document.getElementById('tab-parking').classList.toggle('active', tab === 'parking');
-
-      if (currentLat && currentLng) {
-        loadData();
-      } else {
-        initLocation();
-      }
-    }
+    window.onload = function() { initLocation(); };
 
     function initLocation() {
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
-      
       statusEl.style.display = 'block';
       statusEl.innerHTML = '<div class="spinner"></div>正在讀取 GPS 座標...';
       boardContainer.innerHTML = '';
@@ -246,53 +71,35 @@
 
       navigator.geolocation.getCurrentPosition(
         position => {
-          currentLat = position.coords.latitude;
-          currentLng = position.coords.longitude;
-          loadData();
+          fetchTrainBoard(position.coords.latitude, position.coords.longitude);
         },
         error => {
-          let errorMsg = '無法取得位置資訊';
-          if (error.code === error.PERMISSION_DENIED) {
-            errorMsg = '❌ 請開啟瀏覽器的「位置存取權限」';
-          }
-          statusEl.innerHTML = errorMsg;
+          statusEl.innerHTML = (error.code === error.PERMISSION_DENIED) ? '❌ 請開啟瀏覽器的「位置存取權限」' : '無法取得位置資訊';
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
     }
 
-    function loadData() {
+    function fetchTrainBoard(lat, lng) {
       const statusEl = document.getElementById('status-msg');
-      const stationBadge = document.getElementById('station-info');
-      
-      statusEl.style.display = 'block';
-      statusEl.innerHTML = '<div class="spinner"></div>正在載入即時資料...';
+      statusEl.innerHTML = '<div class="spinner"></div>正在比對最近車站與列車班次...';
 
-      fetch(`${GAS_URL}?lat=${currentLat}&lng=${currentLng}&type=${currentTab}`)
+      fetch(`${GAS_URL}?lat=${lat}&lng=${lng}`)
         .then(res => res.json())
         .then(data => {
           if (data.status !== 'success') {
             statusEl.innerHTML = `⚠️ 錯誤: ${data.message}`;
             return;
           }
-
-          if (currentTab === 'train') {
-            stationBadge.style.display = 'inline-block';
-            stationBadge.innerText = `📍 最近車站：${data.station.StationName} (距離約 ${data.station.DistanceKm} km)`;
-            renderTrainBoard(data.liveBoard);
-          } else {
-            stationBadge.style.display = 'none';
-            renderParkingBoard(data.parking);
-          }
+          document.getElementById('station-info').innerText = `📍 最近車站：${data.station.StationName} (距離約 ${data.station.DistanceKm} km)`;
+          renderBoard(data.liveBoard);
         })
         .catch(err => {
           statusEl.innerHTML = '❌ 連線失敗，請檢查網路或 GAS 網址設定';
-          console.error(err);
         });
     }
 
-    // 渲染台鐵列車看板
-    function renderTrainBoard(trains) {
+    function renderBoard(trains) {
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
 
@@ -313,49 +120,15 @@
         const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
 
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = 'train-card';
         card.innerHTML = `
-          <div class="info-box">
-            <div class="main-title">${cleanTrainType} ${train.trainNo} 次</div>
-            <div class="sub-title">開往 ${train.endingStationName}</div>
+          <div class="train-info">
+            <div class="train-type">${cleanTrainType} ${train.trainNo} 次</div>
+            <div class="train-dest">開往 ${train.endingStationName}</div>
           </div>
-          <div class="right-box">
-            <div class="time-or-spaces">${timeDisplay}</div>
+          <div class="train-time-box">
+            <div class="scheduled-time">${timeDisplay}</div>
             <span class="status-tag ${delayClass}">${delayText}</span>
-          </div>
-        `;
-        boardContainer.appendChild(card);
-      });
-    }
-
-    // 渲染周邊停車場剩餘車位看板
-    function renderParkingBoard(parkings) {
-      const statusEl = document.getElementById('status-msg');
-      const boardContainer = document.getElementById('board-container');
-
-      if (!parkings || parkings.length === 0) {
-        statusEl.innerHTML = '周邊 1.5 公里內暫無提供即時車位資訊的公有停車場';
-        return;
-      }
-
-      statusEl.style.display = 'none';
-      boardContainer.innerHTML = '';
-
-      parkings.forEach(p => {
-        const hasSpace = p.availableSpaces > 0;
-        const statusClass = hasSpace ? 'status-parking-has' : 'status-parking-full';
-        const statusText = hasSpace ? `🟢 剩餘 ${p.availableSpaces} 格` : '🔴 滿位';
-        const totalText = p.totalSpaces > 0 ? `/ 總位 ${p.totalSpaces}` : '';
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <div class="info-box">
-            <div class="main-title">${p.name}</div>
-            <div class="sub-title">📍 距離約 ${p.distanceKm} km ${totalText}</div>
-          </div>
-          <div class="right-box">
-            <span class="status-tag ${statusClass}">${statusText}</span>
           </div>
         `;
         boardContainer.appendChild(card);
