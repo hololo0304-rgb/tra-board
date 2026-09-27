@@ -3,107 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>離我最近 - 翻牌式台鐵時刻表</title>
+  <title>離我最近 - 台鐵即時列車看板</title>
   <style>
     :root {
-      --board-bg: #111111;
-      --card-bg: #222222;
-      --card-text: #f0c040; /* 經典翻牌黃字 */
-      --card-border: #000000;
-      --card-shadow: rgba(0, 0, 0, 0.8);
-      --on-time: #4caf50;
-      --delay: #f44336;
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --primary-color: #0056b3;
+      --text-main: #333333;
+      --text-muted: #666666;
+      --on-time-color: #28a745;
+      --delay-color: #dc3545;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Courier New', Courier, monospace, -apple-system, sans-serif; }
-    body { background-color: #0a0a0a; color: #ffffff; padding: 16px; max-width: 600px; margin: 0 auto; }
-    
-    header { text-align: center; padding: 16px 0; border-bottom: 2px solid #333; margin-bottom: 16px; }
-    h1 { font-size: 1.5rem; letter-spacing: 2px; color: #f0c040; text-transform: uppercase; text-shadow: 0 0 8px rgba(240, 192, 64, 0.3); }
-    .station-badge { display: inline-block; background-color: #222; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 0.9rem; margin-top: 8px; border: 1px solid #444; }
-
-    .refresh-btn { display: block; width: 100%; margin: 16px 0; padding: 12px; background: linear-gradient(180deg, #333 0%, #111 100%); color: #f0c040; border: 1px solid #555; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .refresh-btn:active { transform: translateY(1px); }
-
-    #status-msg { text-align: center; padding: 20px; color: #888; font-size: 0.95rem; }
-
-    /* 翻牌看板主容器 */
-    .solari-board { display: flex; flex-direction: column; gap: 10px; background-color: var(--board-bg); padding: 12px; border-radius: 8px; border: 2px solid #333; box-shadow: inset 0 0 15px #000; }
-    
-    /* 單一行班次 */
-    .solari-row { display: flex; align-items: center; justify-content: space-between; background: #1a1a1a; padding: 10px; border-radius: 6px; border-bottom: 2px solid #000; }
-    
-    .train-details { display: flex; flex-direction: column; gap: 4px; }
-    .train-no { font-size: 1.1rem; font-weight: bold; color: #fff; letter-spacing: 1px; }
-    .train-type { font-size: 0.85rem; color: #aaa; }
-
-    /* 翻牌單元 (Split-Flap Digit) */
-    .flap-group { display: flex; gap: 4px; align-items: center; }
-    .flap-unit {
-      position: relative;
-      width: 28px;
-      height: 40px;
-      background-color: var(--card-bg);
-      color: var(--card-text);
-      font-size: 1.4rem;
-      font-weight: bold;
-      text-align: center;
-      line-height: 40px;
-      border-radius: 4px;
-      box-shadow: 0 3px 6px var(--card-shadow);
-      perspective: 200px;
-      border: 1px solid #333;
-    }
-
-    /* 翻牌中間橫線 (模擬兩片卡片切割感) */
-    .flap-unit::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 2;
-    }
-
-    /* 翻頁動畫 */
-    .flap-unit.flip {
-      animation: flipAnim 0.6s ease-in-out;
-    }
-
-    @keyframes flipAnim {
-      0% { transform: rotateX(0deg); }
-      50% { transform: rotateX(-90deg); background-color: #111; }
-      100% { transform: rotateX(0deg); }
-    }
-
-    .delay-tag { font-size: 0.85rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .tag-ontime { background-color: rgba(76, 175, 80, 0.2); color: var(--on-time); border: 1px solid var(--on-time); }
-    .tag-delay { background-color: rgba(244, 67, 54, 0.2); color: var(--delay); border: 1px solid var(--delay); }
-
-    .spinner { border: 3px solid #333; border-top: 3px solid #f0c040; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 10px auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; max-width: 500px; margin: 0 auto; }
+    header { text-align: center; padding: 16px 0; }
+    h1 { font-size: 1.4rem; color: var(--primary-color); margin-bottom: 6px; }
+    .station-badge { display: inline-block; background-color: #e3f2fd; color: #0d47a1; padding: 6px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; }
+    .refresh-btn { display: block; width: 100%; margin: 16px 0; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    #status-msg { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; }
+    .board-list { display: flex; flex-direction: column; gap: 12px; }
+    .train-card { background-color: var(--card-bg); border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+    .train-info { display: flex; flex-direction: column; gap: 4px; }
+    .train-type { font-size: 1.1rem; font-weight: bold; color: #111; }
+    .train-dest { font-size: 0.9rem; color: var(--text-muted); }
+    .train-time-box { text-align: right; }
+    .scheduled-time { font-size: 1.1rem; font-weight: bold; color: var(--text-main); }
+    .status-tag { display: inline-block; font-size: 0.85rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
+    .status-ontime { background-color: #d4edda; color: var(--on-time-color); }
+    .status-delay { background-color: #f8d7da; color: var(--delay-color); }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; margin: 10px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>DEPARTURES</h1>
-    <div id="station-info" class="station-badge">LOCATING...</div>
+    <h1>🚆 台鐵即時列車看板</h1>
+    <div id="station-info" class="station-badge">定位中...</div>
   </header>
 
-  <button class="refresh-btn" onclick="initLocation()">🔄 REFRESH BOARD</button>
+  <button class="refresh-btn" onclick="initLocation()">🔄 更新即時資訊</button>
 
   <div id="status-msg">
     <div class="spinner"></div>
-    SEARCHING NEAREST STATION...
+    正在搜尋離你最近的車站...
   </div>
 
-  <div id="board-container" class="solari-board" style="display: none;"></div>
+  <div id="board-container" class="board-list"></div>
 
   <script>
-    // ⚠️ 請填寫你的台鐵專屬 GAS Web App 發布網址
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
 
     window.onload = function() { initLocation(); };
@@ -112,11 +61,11 @@
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
       statusEl.style.display = 'block';
-      statusEl.innerHTML = '<div class="spinner"></div>READING GPS LOCATION...';
-      boardContainer.style.display = 'none';
+      statusEl.innerHTML = '<div class="spinner"></div>正在讀取 GPS 座標...';
+      boardContainer.innerHTML = '';
 
       if (!navigator.geolocation) {
-        statusEl.innerHTML = '❌ GPS NOT SUPPORTED';
+        statusEl.innerHTML = '❌ 你的裝置不支援 GPS 定位功能';
         return;
       }
 
@@ -125,7 +74,7 @@
           fetchTrainBoard(position.coords.latitude, position.coords.longitude);
         },
         error => {
-          statusEl.innerHTML = '❌ LOCATION ACCESS DENIED';
+          statusEl.innerHTML = (error.code === error.PERMISSION_DENIED) ? '❌ 請開啟瀏覽器的「位置存取權限」' : '無法取得位置資訊';
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -133,71 +82,56 @@
 
     function fetchTrainBoard(lat, lng) {
       const statusEl = document.getElementById('status-msg');
-      statusEl.innerHTML = '<div class="spinner"></div>UPDATING SOLARI BOARD...';
+      statusEl.innerHTML = '<div class="spinner"></div>正在比對最近車站與列車班次...';
 
       fetch(`${GAS_URL}?lat=${lat}&lng=${lng}`)
         .then(res => res.json())
         .then(data => {
           if (data.status !== 'success') {
-            statusEl.innerHTML = `⚠️ ERROR: ${data.message}`;
+            statusEl.innerHTML = `⚠️ 錯誤: ${data.message}`;
             return;
           }
-          document.getElementById('station-info').innerText = `📍 ${data.station.StationName} (${data.station.DistanceKm} km)`;
-          renderSolariBoard(data.liveBoard);
+          document.getElementById('station-info').innerText = `📍 最近車站：${data.station.StationName} (距離約 ${data.station.DistanceKm} km)`;
+          renderBoard(data.liveBoard);
         })
         .catch(err => {
-          statusEl.innerHTML = '❌ CONNECTION FAILED';
+          statusEl.innerHTML = '❌ 連線失敗，請檢查網路或 GAS 網址設定';
         });
     }
 
-    function renderSolariBoard(trains) {
+    function renderBoard(trains) {
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
 
       if (!trains || trains.length === 0) {
-        statusEl.innerHTML = 'NO UPCOMING TRAINS';
+        statusEl.innerHTML = '目前暫無即時班次資料';
         return;
       }
 
       statusEl.style.display = 'none';
-      boardContainer.style.display = 'flex';
       boardContainer.innerHTML = '';
 
-      trains.forEach((train, index) => {
-        const timeShort = train.scheduledDepartureTime.substring(0, 5); // Ex: "14:30"
+      trains.forEach(train => {
+        const timeShort = train.scheduledDepartureTime.substring(0, 5);
         const cleanTrainType = train.trainTypeName.split('(')[0];
         const isDelay = train.delayTime > 0;
-        const delayClass = isDelay ? 'tag-delay' : 'tag-ontime';
-        const delayText = isDelay ? `+${train.delayTime}M` : 'ON TIME';
+        const delayClass = isDelay ? 'status-delay' : 'status-ontime';
+        const timeDisplay = isDelay ? `原訂 ${timeShort}` : timeShort;
+        const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
 
-        const row = document.createElement('div');
-        row.className = 'solari-row';
-
-        // 建立時間的翻牌字卡 (例如 "1" "4" ":" "3" "0")
-        let flapTimeHTML = '';
-        for (let char of timeShort) {
-          flapTimeHTML += `<div class="flap-unit flip">${char}</div>`;
-        }
-
-        row.innerHTML = `
-          <div class="train-details">
-            <div class="train-no">${cleanTrainType} ${train.trainNo}</div>
-            <div class="train-type">往 ${train.endingStationName}</div>
+        const card = document.createElement('div');
+        card.className = 'train-card';
+        card.innerHTML = `
+          <div class="train-info">
+            <div class="train-type">${cleanTrainType} ${train.trainNo} 次</div>
+            <div class="train-dest">開往 ${train.endingStationName}</div>
           </div>
-          <div style="display: flex; align-items: center;">
-            <div class="flap-group">
-              ${flapTimeHTML}
-            </div>
-            <span class="delay-tag ${delayClass}">${delayText}</span>
+          <div class="train-time-box">
+            <div class="scheduled-time">${timeDisplay}</div>
+            <span class="status-tag ${delayClass}">${delayText}</span>
           </div>
         `;
-
-        boardContainer.appendChild(row);
-
-        // 錯開翻牌動畫時間，製造像復古看板逐列翻頁的機械感
-        setTimeout(() => {
-          row.querySelectorAll('.flap-unit').forEach(el => el.classList.add('flip'));
-        }, index * 100);
+        boardContainer.appendChild(card);
       });
     }
   </script>
