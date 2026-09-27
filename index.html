@@ -3,57 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>離我最近 - 台鐵即時列車看板</title>
+  <title>離我最近 - 台鐵即時看板</title>
   <style>
     :root {
-      --bg-color: #f4f6f9;
+      --bg-color: #f4f6f8;
       --card-bg: #ffffff;
-      --primary-color: #0056b3;
-      --text-main: #333333;
-      --text-muted: #666666;
-      --on-time-color: #28a745;
-      --delay-color: #dc3545;
+      --text-main: #222222;
+      --text-sub: #666666;
+      --border-color: #e0e0e0;
+      --primary-color: #1a73e8;
+      --ontime-color: #2e7d32;
+      --delay-color: #c62828;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; max-width: 500px; margin: 0 auto; }
-    header { text-align: center; padding: 16px 0; }
-    h1 { font-size: 1.4rem; color: var(--primary-color); margin-bottom: 6px; }
-    .station-badge { display: inline-block; background-color: #e3f2fd; color: #0d47a1; padding: 6px 14px; border-radius: 20px; font-size: 0.95rem; font-weight: bold; }
-    .refresh-btn { display: block; width: 100%; margin: 16px 0; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    #status-msg { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.95rem; }
-    .board-list { display: flex; flex-direction: column; gap: 12px; }
-    .train-card { background-color: var(--card-bg); border-radius: 10px; padding: 14px 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
-    .train-info { display: flex; flex-direction: column; gap: 4px; }
-    .train-type { font-size: 1.1rem; font-weight: bold; color: #111; }
-    .train-dest { font-size: 0.9rem; color: var(--text-muted); }
-    .train-time-box { text-align: right; }
-    .scheduled-time { font-size: 1.1rem; font-weight: bold; color: var(--text-main); }
-    .status-tag { display: inline-block; font-size: 0.85rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-top: 4px; }
-    .status-ontime { background-color: #d4edda; color: var(--on-time-color); }
-    .status-delay { background-color: #f8d7da; color: var(--delay-color); }
-    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color); border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; margin: 10px auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
+    
+    header { text-align: center; padding: 8px 0; margin-bottom: 8px; }
+    h1 { font-size: 1.1rem; color: #333; font-weight: 700; }
+    .station-badge { display: inline-block; background-color: #e8f0fe; color: var(--primary-color); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
+
+    #status-msg { text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.9rem; }
+
+    /* 板塊與卡片樣式 */
+    .section-title { font-size: 0.9rem; color: #555; font-weight: 700; margin: 12px 0 6px 4px; display: flex; align-items: center; justify-content: space-between; }
+    .train-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+    .train-card { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    
+    .train-info-left { display: flex; flex-direction: column; gap: 2px; }
+    .train-no-type { font-size: 0.9rem; font-weight: bold; color: var(--text-main); }
+    .train-destination { font-size: 0.8rem; color: var(--text-sub); }
+
+    .train-info-right { display: flex; align-items: center; gap: 8px; }
+    .train-time { font-size: 1rem; font-weight: 700; font-family: monospace; color: #111; }
+    
+    .delay-tag { font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+    .tag-ontime { background-color: #e8f5e9; color: var(--ontime-color); }
+    .tag-delay { background-color: #ffebee; color: var(--delay-color); }
+
+    .empty-card { background-color: #fff; padding: 12px; text-align: center; color: #999; font-size: 0.85rem; border-radius: 8px; border: 1px dashed var(--border-color); }
+
+    /* 按鈕放置於頁面最下方 */
+    .footer-container { margin-top: auto; padding-top: 16px; padding-bottom: 12px; }
+    .refresh-btn { display: block; width: 100%; padding: 12px; background-color: var(--primary-color); color: #ffffff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .refresh-btn:active { background-color: #1557b0; }
+
+    .spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--primary-color); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 8px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🚆 台鐵即時列車看板</h1>
+    <h1>即時列車時刻表</h1>
     <div id="station-info" class="station-badge">定位中...</div>
   </header>
 
-  <button class="refresh-btn" onclick="initLocation()">🔄 更新即時資訊</button>
-
   <div id="status-msg">
     <div class="spinner"></div>
-    正在搜尋離你最近的車站...
+    正在取得您的位置與最近車站...
   </div>
 
-  <div id="board-container" class="board-list"></div>
+  <!-- 動態渲染南下/北上看板容器 -->
+  <div id="board-container" style="display: none;"></div>
+
+  <div class="footer-container">
+    <button class="refresh-btn" onclick="initLocation()">🔄 重新整理看板</button>
+  </div>
 
   <script>
+    // ⚠️ 請填寫你的台鐵 GAS Web App 發布網址
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
+
+    // 桃園市內常見台鐵車站列表（包含程式搜尋比對名稱）
+    const TAOYUAN_STATIONS = ['桃園', '內壢', '中壢', '埔心', '楊梅', '富岡', '新富', '坑口'];
 
     window.onload = function() { initLocation(); };
 
@@ -61,11 +85,11 @@
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
       statusEl.style.display = 'block';
-      statusEl.innerHTML = '<div class="spinner"></div>正在讀取 GPS 座標...';
-      boardContainer.innerHTML = '';
+      statusEl.innerHTML = '<div class="spinner"></div>定位中...';
+      boardContainer.style.display = 'none';
 
       if (!navigator.geolocation) {
-        statusEl.innerHTML = '❌ 你的裝置不支援 GPS 定位功能';
+        statusEl.innerHTML = '❌ 您的裝置不支援 GPS 定位';
         return;
       }
 
@@ -74,7 +98,7 @@
           fetchTrainBoard(position.coords.latitude, position.coords.longitude);
         },
         error => {
-          statusEl.innerHTML = (error.code === error.PERMISSION_DENIED) ? '❌ 請開啟瀏覽器的「位置存取權限」' : '無法取得位置資訊';
+          statusEl.innerHTML = '❌ 無法取得 GPS 位置權限';
         },
         { enableHighAccuracy: true, timeout: 10000 }
       );
@@ -82,57 +106,114 @@
 
     function fetchTrainBoard(lat, lng) {
       const statusEl = document.getElementById('status-msg');
-      statusEl.innerHTML = '<div class="spinner"></div>正在比對最近車站與列車班次...';
+      statusEl.innerHTML = '<div class="spinner"></div>抓取即時班次資料...';
 
       fetch(`${GAS_URL}?lat=${lat}&lng=${lng}`)
         .then(res => res.json())
         .then(data => {
           if (data.status !== 'success') {
-            statusEl.innerHTML = `⚠️ 錯誤: ${data.message}`;
+            statusEl.innerHTML = `⚠️ 讀取失敗: ${data.message}`;
             return;
           }
-          document.getElementById('station-info').innerText = `📍 最近車站：${data.station.StationName} (距離約 ${data.station.DistanceKm} km)`;
-          renderBoard(data.liveBoard);
+          const stationName = data.station.StationName;
+          document.getElementById('station-info').innerText = `📍 ${stationName} (${data.station.DistanceKm} km)`;
+          
+          renderBoard(data.liveBoard, stationName);
         })
         .catch(err => {
-          statusEl.innerHTML = '❌ 連線失敗，請檢查網路或 GAS 網址設定';
+          statusEl.innerHTML = '❌ 連線失敗，請稍後再試';
         });
     }
 
-    function renderBoard(trains) {
+    function renderBoard(trains, stationName) {
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
 
       if (!trains || trains.length === 0) {
-        statusEl.innerHTML = '目前暫無即時班次資料';
+        statusEl.innerHTML = '目前無即時列車資料';
         return;
       }
 
       statusEl.style.display = 'none';
+      boardContainer.style.display = 'block';
       boardContainer.innerHTML = '';
 
-      trains.forEach(train => {
-        const timeShort = train.scheduledDepartureTime.substring(0, 5);
-        const cleanTrainType = train.trainTypeName.split('(')[0];
-        const isDelay = train.delayTime > 0;
-        const delayClass = isDelay ? 'status-delay' : 'status-ontime';
-        const timeDisplay = isDelay ? `原訂 ${timeShort}` : timeShort;
-        const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
+      const now = new Date();
 
-        const card = document.createElement('div');
-        card.className = 'train-card';
-        card.innerHTML = `
-          <div class="train-info">
-            <div class="train-type">${cleanTrainType} ${train.trainNo} 次</div>
-            <div class="train-dest">開往 ${train.endingStationName}</div>
-          </div>
-          <div class="train-time-box">
-            <div class="scheduled-time">${timeDisplay}</div>
-            <span class="status-tag ${delayClass}">${delayText}</span>
-          </div>
-        `;
-        boardContainer.appendChild(card);
+      // 過濾並區分南下/北上 (Direction: 0=順行/北上, 1=逆行/南下)
+      // 同時過濾出發時間在 60 分鐘內的班次
+      const northBound = [];
+      const southBound = [];
+
+      trains.forEach(train => {
+        // 解析發車時間
+        const timeParts = train.scheduledDepartureTime.split(':');
+        const trainTime = new Date();
+        trainTime.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
+
+        // 處理跨夜班次微調
+        const diffMinutes = (trainTime - now) / (1000 * 60);
+
+        if (diffMinutes >= -5 && diffMinutes <= 60) {
+          if (train.direction === 0) {
+            if (northBound.length < 3) northBound.push(train);
+          } else {
+            if (southBound.length < 3) southBound.push(train);
+          }
+        }
       });
+
+      // 判斷是否為桃園市車站
+      const isTaoyuan = TAOYUAN_STATIONS.some(s => stationName.includes(s));
+
+      // 產生 Html 區塊
+      const northHTML = generateSectionHTML('北上 (順行)', northBound);
+      const southHTML = generateSectionHTML('南下 (逆行)', southBound);
+
+      // 桃園市：北上排前面；其他：南下排前面
+      if (isTaoyuan) {
+        boardContainer.innerHTML = northHTML + southHTML;
+      } else {
+        boardContainer.innerHTML = southHTML + northHTML;
+      }
+    }
+
+    function generateSectionHTML(title, trainList) {
+      let cardsHTML = '';
+
+      if (trainList.length === 0) {
+        cardsHTML = `<div class="empty-card">1 小時內無即時班車</div>`;
+      } else {
+        trainList.forEach(train => {
+          const timeShort = train.scheduledDepartureTime.substring(0, 5);
+          const cleanType = train.trainTypeName.split('(')[0];
+          const isDelay = train.delayTime > 0;
+          const delayClass = isDelay ? 'tag-delay' : 'tag-ontime';
+          const delayText = isDelay ? `晚 ${train.delayTime} 分` : '準點';
+
+          cardsHTML += `
+            <div class="train-card">
+              <div class="train-info-left">
+                <div class="train-no-type">${cleanType} ${train.trainNo}</div>
+                <div class="train-destination">往 ${train.endingStationName}</div>
+              </div>
+              <div class="train-info-right">
+                <span class="train-time">${timeShort}</span>
+                <span class="delay-tag ${delayClass}">${delayText}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      return `
+        <div class="section-title">
+          <span>🚆 ${title}</span>
+        </div>
+        <div class="train-list">
+          ${cardsHTML}
+        </div>
+      `;
     }
   </script>
 </body>
