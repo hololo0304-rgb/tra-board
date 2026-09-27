@@ -1,177 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>離我最近 - 台鐵即時列車看板</title>
-  <style>
-    :root {
-      --bg-color: #f4f6f9;
-      --card-bg: #ffffff;
-      --primary-color: #0056b3;
-      --text-main: #333333;
-      --text-muted: #666666;
-      --on-time-color: #28a745;
-      --delay-color: #dc3545;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding: 16px;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    header {
-      text-align: center;
-      padding: 16px 0;
-    }
-
-    h1 {
-      font-size: 1.4rem;
-      color: var(--primary-color);
-      margin-bottom: 6px;
-    }
-
-    .station-badge {
-      display: inline-block;
-      background-color: #e3f2fd;
-      color: #0d47a1;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.95rem;
-      font-weight: bold;
-    }
-
-    .refresh-btn {
-      display: block;
-      width: 100%;
-      margin: 16px 0;
-      padding: 12px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .refresh-btn:active {
-      opacity: 0.85;
-    }
-
-    #status-msg {
-      text-align: center;
-      padding: 20px;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-    }
-
-    .board-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .train-card {
-      background-color: var(--card-bg);
-      border-radius: 10px;
-      padding: 14px 16px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .train-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .train-type {
-      font-size: 1.1rem;
-      font-weight: bold;
-      color: #111;
-    }
-
-    .train-dest {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .train-time-box {
-      text-align: right;
-    }
-
-    .scheduled-time {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: var(--text-main);
-    }
-
-    .status-tag {
-      display: inline-block;
-      font-size: 0.85rem;
-      font-weight: bold;
-      padding: 2px 8px;
-      border-radius: 4px;
-      margin-top: 4px;
-    }
-
-    .status-ontime {
-      background-color: #d4edda;
-      color: var(--on-time-color);
-    }
-
-    .status-delay {
-      background-color: #f8d7da;
-      color: var(--delay-color);
-    }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid var(--primary-color);
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      animation: spin 1s linear infinite;
-      margin: 10px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>🚆 台鐵即時列車看板</h1>
-    <div id="station-info" class="station-badge">定位中...</div>
-  </header>
-
-  <button class="refresh-btn" onclick="initLocation()">🔄 更新即時資訊</button>
-
-  <div id="status-msg">
-    <div class="spinner"></div>
-    正在搜尋離你最近的車站...
-  </div>
-
-  <div id="board-container" class="board-list"></div>
-
-  <script>
+<script>
     // ⚠️ 請填入你在 GAS 發布後取得的 Web 應用程式 URL
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
 
@@ -247,25 +74,33 @@
       boardContainer.innerHTML = '';
 
       trains.forEach(train => {
-        const isDelay = train.delayTime > 0;
-        const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
-        const delayClass = isDelay ? 'status-delay' : 'status-ontime';
+        // 1. 去掉秒數，只保留 時:分 (前 5 個字元)
+        const timeShort = train.scheduledDepartureTime.substring(0, 5);
+        
+        // 2. 簡化車種名稱（去掉括號與備註，例如只保留「自強」）
+        const cleanTrainType = train.trainTypeName.split('(')[0];
 
-       const card = document.createElement('div');
-card.className = 'train-card';
-card.innerHTML = `
-  <div class="train-info">
-    <div class="train-type">${train.trainTypeName} ${train.trainNo} 次</div>
-    <div class="train-dest">開往 ${train.endingStationName}</div>
-  </div>
-  <div class="train-time-box">
-    <div class="scheduled-time">${train.scheduledDepartureTime.substring(0, 5)}</div>
-    <span class="status-tag ${delayClass}">${delayText}</span>
-  </div>
-`;
+        // 3. 判斷延誤狀態並格式化文字
+        const isDelay = train.delayTime > 0;
+        const delayClass = isDelay ? 'status-delay' : 'status-ontime';
+        
+        // 依據是否延誤調整顯示格式
+        const timeDisplay = isDelay ? `原訂 ${timeShort}` : timeShort;
+        const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
+
+        const card = document.createElement('div');
+        card.className = 'train-card';
+        card.innerHTML = `
+          <div class="train-info">
+            <div class="train-type">${cleanTrainType} ${train.trainNo} 次</div>
+            <div class="train-dest">開往 ${train.endingStationName}</div>
+          </div>
+          <div class="train-time-box">
+            <div class="scheduled-time">${timeDisplay}</div>
+            <span class="status-tag ${delayClass}">${delayText}</span>
+          </div>
+        `;
         boardContainer.appendChild(card);
       });
     }
   </script>
-</body>
-</html>
