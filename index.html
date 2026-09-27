@@ -251,18 +251,18 @@
         const delayText = isDelay ? `⚠️ 延誤 ${train.delayTime} 分鐘` : '✅ 準點';
         const delayClass = isDelay ? 'status-delay' : 'status-ontime';
 
-        const card = document.createElement('div');
-        card.className = 'train-card';
-        card.innerHTML = `
-          <div class="train-info">
-            <div class="train-type">${train.trainTypeName} ${train.trainNo} 次</div>
-            <div class="train-dest">開往 ${train.endingStationName}</div>
-          </div>
-          <div class="train-time-box">
-            <div class="scheduled-time">${train.scheduledDepartureTime.substring(0, 5)}</div>
-            <span class="status-tag ${delayClass}">${delayText}</span>
-          </div>
-        `;
+       const card = document.createElement('div');
+card.className = 'train-card';
+card.innerHTML = `
+  <div class="train-info">
+    <div class="train-type">${train.trainTypeName} ${train.trainNo} 次</div>
+    <div class="train-dest">開往 ${train.endingStationName}</div>
+  </div>
+  <div class="train-time-box">
+    <div class="scheduled-time">${train.scheduledDepartureTime.substring(0, 5)}</div>
+    <span class="status-tag ${delayClass}">${delayText}</span>
+  </div>
+`;
         boardContainer.appendChild(card);
       });
     }
