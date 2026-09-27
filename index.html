@@ -17,7 +17,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 12px; max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; }
     
     header { text-align: center; padding: 8px 0; margin-bottom: 8px; }
     h1 { font-size: 1.1rem; color: #333; font-weight: 700; }
@@ -26,8 +26,8 @@
     #status-msg { text-align: center; padding: 20px; color: var(--text-sub); font-size: 0.9rem; }
 
     /* 板塊與卡片樣式 */
-    .section-title { font-size: 0.9rem; color: #555; font-weight: 700; margin: 12px 0 6px 4px; display: flex; align-items: center; justify-content: space-between; }
-    .train-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .section-title { font-size: 0.9rem; color: #555; font-weight: 700; margin: 10px 0 6px 4px; display: flex; align-items: center; justify-content: space-between; }
+    .train-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
 
     .train-card { display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     
@@ -44,8 +44,8 @@
 
     .empty-card { background-color: #fff; padding: 12px; text-align: center; color: #999; font-size: 0.85rem; border-radius: 8px; border: 1px dashed var(--border-color); }
 
-    /* 按鈕放置於頁面最下方 */
-    .footer-container { margin-top: auto; padding-top: 16px; padding-bottom: 12px; }
+    /* 重新整理按鈕緊貼在看板下方 */
+    .footer-container { padding-top: 8px; padding-bottom: 12px; }
     .refresh-btn { display: block; width: 100%; padding: 12px; background-color: var(--primary-color); color: #ffffff; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .refresh-btn:active { background-color: #1557b0; }
 
@@ -65,7 +65,7 @@
     正在取得您的位置與最近車站...
   </div>
 
-  <!-- 動態渲染南下/北上看板容器 -->
+  <!-- 動態渲染順行/逆行看板容器 -->
   <div id="board-container" style="display: none;"></div>
 
   <div class="footer-container">
@@ -76,7 +76,7 @@
     // ⚠️ 請填寫你的台鐵 GAS Web App 發布網址
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
 
-    // 桃園市內常見台鐵車站列表（包含程式搜尋比對名稱）
+    // 桃園市內常見台鐵車站列表
     const TAOYUAN_STATIONS = ['桃園', '內壢', '中壢', '埔心', '楊梅', '富岡', '新富', '坑口'];
 
     window.onload = function() { initLocation(); };
@@ -125,6 +125,15 @@
         });
     }
 
+    function parseTrainTime(timeStr) {
+      const parts = timeStr.trim().split(':');
+      if (parts.length >= 2) {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(parts[0], 10), parseInt(parts[1], 10), 0);
+      }
+      return new Date(timeStr);
+    }
+
     function renderBoard(trains, stationName) {
       const statusEl = document.getElementById('status-msg');
       const boardContainer = document.getElementById('board-container');
@@ -139,42 +148,45 @@
       boardContainer.innerHTML = '';
 
       const now = new Date();
-
-      // 過濾並區分南下/北上 (Direction: 0=順行/北上, 1=逆行/南下)
-      // 同時過濾出發時間在 60 分鐘內的班次
-      const northBound = [];
-      const southBound = [];
+      const clockwiseTrains = [];     // 順行
+      const counterClockwiseTrains = []; // 逆行
 
       trains.forEach(train => {
-        // 解析發車時間
-        const timeParts = train.scheduledDepartureTime.split(':');
-        const trainTime = new Date();
-        trainTime.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
-
-        // 處理跨夜班次微調
+        const trainTime = parseTrainTime(train.scheduledDepartureTime);
         const diffMinutes = (trainTime - now) / (1000 * 60);
 
+        // 僅取 60 分鐘以內（含剛開走 5 分鐘內）發車的班次
         if (diffMinutes >= -5 && diffMinutes <= 60) {
-          if (train.direction === 0) {
-            if (northBound.length < 3) northBound.push(train);
+          const dir = Number(train.direction);
+          
+          // TDX: Direction 0 = 順行, Direction 1 = 逆行
+          if (dir === 0) {
+            if (clockwiseTrains.length < 3) clockwiseTrains.push(train);
+          } else if (dir === 1) {
+            if (counterClockwiseTrains.length < 3) counterClockwiseTrains.push(train);
           } else {
-            if (southBound.length < 3) southBound.push(train);
+            // 備用判斷：奇數車次為順行/南下，偶數車次為逆行/北上
+            if (train.trainNo % 2 === 1) {
+              if (clockwiseTrains.length < 3) clockwiseTrains.push(train);
+            } else {
+              if (counterClockwiseTrains.length < 3) counterClockwiseTrains.push(train);
+            }
           }
         }
       });
 
-      // 判斷是否為桃園市車站
+      // 判斷是否為桃園市內車站
       const isTaoyuan = TAOYUAN_STATIONS.some(s => stationName.includes(s));
 
-      // 產生 Html 區塊
-      const northHTML = generateSectionHTML('北上 (順行)', northBound);
-      const southHTML = generateSectionHTML('南下 (逆行)', southBound);
+      const clockwiseHTML = generateSectionHTML('順行', clockwiseTrains);
+      const counterClockwiseHTML = generateSectionHTML('逆行', counterClockwiseTrains);
 
-      // 桃園市：北上排前面；其他：南下排前面
+      // 桃園市：順行在上、逆行在下
+      // 其他縣市：逆行在上、順行在下
       if (isTaoyuan) {
-        boardContainer.innerHTML = northHTML + southHTML;
+        boardContainer.innerHTML = clockwiseHTML + counterClockwiseHTML;
       } else {
-        boardContainer.innerHTML = southHTML + northHTML;
+        boardContainer.innerHTML = counterClockwiseHTML + clockwiseHTML;
       }
     }
 
@@ -185,17 +197,23 @@
         cardsHTML = `<div class="empty-card">1 小時內無即時班車</div>`;
       } else {
         trainList.forEach(train => {
-          const timeShort = train.scheduledDepartureTime.substring(0, 5);
-          const cleanType = train.trainTypeName.split('(')[0];
-          const isDelay = train.delayTime > 0;
+          let timeShort = train.scheduledDepartureTime;
+          if (timeShort.includes(':')) {
+            const parts = timeShort.split(':');
+            timeShort = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+          }
+
+          const cleanType = train.trainTypeName ? train.trainTypeName.split('(')[0] : '列車';
+          const delayMin = Number(train.delayTime) || 0;
+          const isDelay = delayMin > 0;
           const delayClass = isDelay ? 'tag-delay' : 'tag-ontime';
-          const delayText = isDelay ? `晚 ${train.delayTime} 分` : '準點';
+          const delayText = isDelay ? `晚 ${delayMin} 分` : '準點';
 
           cardsHTML += `
             <div class="train-card">
               <div class="train-info-left">
                 <div class="train-no-type">${cleanType} ${train.trainNo}</div>
-                <div class="train-destination">往 ${train.endingStationName}</div>
+                <div class="train-destination">往 ${train.endingStationName || '未知'}</div>
               </div>
               <div class="train-info-right">
                 <span class="train-time">${timeShort}</span>
