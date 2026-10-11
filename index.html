@@ -189,15 +189,16 @@
       100% { transform: rotate(360deg); }
     }
   
-  .live-banner{font-size:12px;color:#234c2a;background:#e9f6e9;border:1px solid #c0dec4;padding:9px 12px;border-radius:9px;margin-bottom:12px}
+  .live-banner{font-size:12px;color:#644315;background:#fff5d7;border:1px solid #e8c57f;padding:9px 12px;border-radius:9px;margin-bottom:12px;line-height:1.6}
   </style>
 </head>
 <body>
-<div class="live-banner">🚆 真實台鐵資料｜定位後查詢最近車站；若後端未提供行車方向，班次將列在「方向待確認」區。</div>
+<div class="live-banner">⚠️ 台鐵即時資料來源約每 2 分鐘更新，顯示資訊可能有延遲。本頁開啟且可見時每 30 秒重新查詢，或按下方按鈕手動更新。</div>
 
   <header>
     <h1>即時列車時刻表</h1>
     <div id="station-info" class="station-badge">📍 定位中...</div>
+    <div id="sync-status" aria-live="polite" style="font-size:0.78rem;color:#52616b;margin-top:10px;">尚未取得列車資料</div>
   </header>
 
   <div id="status-msg">
@@ -222,65 +223,141 @@
     // ⚠️ 填入你的 GAS 發布 Web App 網址
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxOV_Ya5irn24iyc3FiFk3gIVhsNyP1b32Xl5qZgcL1TcF0DMYs8wSS6-BBghNnyCqC/exec';
 
-    window.onload = function() {
-      initLocation();
-    };
+
+    const POLL_INTERVAL_MS = 30000;
+    let lastCoords = null;
+    let pollTimer = null;
+    let pendingRequest = false;
+    let lastSuccessfulFetch = false;
+
+    function pageIsVisible() {
+      return document.visibilityState !== 'hidden';
+    }
+
+    function setSyncStatus(message) {
+      document.getElementById('sync-status').textContent = message;
+    }
+
+    function stopPolling() {
+      if (pollTimer !== null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    function startPolling() {
+      stopPolling();
+      if (!pageIsVisible() || !lastCoords) return;
+      pollTimer = setInterval(() => {
+        if (pageIsVisible() && lastCoords && !pendingRequest) {
+          fetchTrainBoard(lastCoords.lat, lastCoords.lng);
+        }
+      }, POLL_INTERVAL_MS);
+    }
+
+    window.addEventListener('load', () => initLocation());
+    document.addEventListener('visibilitychange', () => {
+      if (!pageIsVisible()) {
+        stopPolling();
+        setSyncStatus('頁面已切到背景，暫停自動查詢');
+      } else {
+        if (lastCoords) {
+          startPolling();
+          fetchTrainBoard(lastCoords.lat, lastCoords.lng);
+        } else {
+          initLocation();
+        }
+      }
+    });
+    window.addEventListener('pagehide', stopPolling);
+    window.addEventListener('pageshow', event => {
+      if (event.persisted && pageIsVisible()) {
+        if (lastCoords) {
+          startPolling();
+          fetchTrainBoard(lastCoords.lat, lastCoords.lng);
+        } else {
+          initLocation();
+        }
+      }
+    });
 
     function initLocation() {
       const statusEl = document.getElementById('status-msg');
       const contentArea = document.getElementById('content-area');
-      
-      statusEl.style.display = 'block';
-      contentArea.style.display = 'none';
-      statusEl.innerHTML = '<div class="spinner"></div>正在讀取 GPS 座標...';
+      if (!lastSuccessfulFetch) {
+        statusEl.style.display = 'block';
+        contentArea.style.display = 'none';
+        statusEl.innerHTML = '<div class="spinner"></div>正在讀取 GPS 座標...';
+      }
+      setSyncStatus('正在確認位置…');
 
       if (!navigator.geolocation) {
-        statusEl.innerHTML = '❌ 你的裝置不支援 GPS 定位功能';
+        setSyncStatus('裝置不支援 GPS 定位');
+        if (!lastSuccessfulFetch) statusEl.textContent = '❌ 裝置不支援 GPS 定位';
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
         position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          fetchTrainBoard(lat, lng);
+          lastCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
+          startPolling();
+          fetchTrainBoard(lastCoords.lat, lastCoords.lng);
         },
         error => {
-          let errorMsg = '無法取得位置資訊';
-          if (error.code === error.PERMISSION_DENIED) {
-            errorMsg = '❌ 請開啟瀏覽器的「位置存取權限」';
+          const message = error.code === 1 ? '請開啟位置存取權限' : '無法取得 GPS 位置';
+          setSyncStatus('⚠️ ' + message);
+          if (!lastSuccessfulFetch) statusEl.textContent = '❌ ' + message;
+          if (lastCoords && pageIsVisible()) {
+            startPolling();
+            fetchTrainBoard(lastCoords.lat, lastCoords.lng);
           }
-          statusEl.innerHTML = errorMsg;
         },
-        { enableHighAccuracy: true, timeout: 10000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
       );
     }
 
-    function fetchTrainBoard(lat, lng) {
+    async function fetchTrainBoard(lat, lng) {
+      if (!pageIsVisible() || pendingRequest) return;
+      pendingRequest = true;
       const statusEl = document.getElementById('status-msg');
       const contentArea = document.getElementById('content-area');
-      
-      statusEl.innerHTML = '<div class="spinner"></div>正在比對最近車站與列車班次...';
-
-      fetch(`${GAS_URL}?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`)
-        .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); })
-        .then(data => {
-          if (!data || data.status !== 'success' || !data.station || !Array.isArray(data.liveBoard)) {
-            statusEl.textContent = `⚠️ 後端資料格式或服務異常：${String(data?.message || data?.status || '請檢查 Apps Script /exec')}`;
-            return;
-          }
-
-          document.getElementById('station-info').innerText = 
-            `📍 ${data.station.StationName} (${data.station.DistanceKm} km)`;
-
-          renderBoard(data.liveBoard);
-          statusEl.style.display = 'none';
-          contentArea.style.display = 'block';
-        })
-        .catch(err => {
-          statusEl.innerHTML = '❌ 連線失敗，請檢查網路或 GAS 網址設定';
-          console.error(err);
-        });
+      const controller = new AbortController();
+      const abortTimer = setTimeout(() => controller.abort(), 20000);
+      if (!lastSuccessfulFetch) {
+        statusEl.style.display = 'block';
+        statusEl.innerHTML = '<div class="spinner"></div>正在讀取最近車站與列車班次...';
+      }
+      setSyncStatus('正在查詢台鐵班次…');
+      try {
+        const response = await fetch(
+          GAS_URL + '?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng),
+          {signal: controller.signal, cache: 'no-store'}
+        );
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        if (!data || data.status !== 'success' || !data.station || !Array.isArray(data.liveBoard)) {
+          throw new Error(String(data?.message || data?.status || '後端回應格式不符'));
+        }
+        const stationName = String(data.station.StationName || '未知車站');
+        document.getElementById('station-info').textContent =
+          '📍 ' + stationName + ' (' + String(data.station.DistanceKm ?? '?') + ' km)';
+        renderBoard(data.liveBoard);
+        lastSuccessfulFetch = true;
+        statusEl.style.display = 'none';
+        contentArea.style.display = 'block';
+        const time = new Date().toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+        setSyncStatus('最後查詢 ' + time + '｜每 30 秒更新（資料源約每 2 分鐘更新）');
+      } catch (error) {
+        console.error('台鐵資料查詢失敗', error);
+        const message = '⚠️ 查詢失敗，請檢查網路或後端（仍可手動重試）';
+        setSyncStatus(message);
+        if (!lastSuccessfulFetch) {
+          statusEl.textContent = message;
+        }
+      } finally {
+        clearTimeout(abortTimer);
+        pendingRequest = false;
+      }
     }
 
     function renderBoard(trains) {
@@ -300,9 +377,7 @@
       const southboundTrains = [];
       const otherTrains = [];
 
-      // 西部幹線與多數台鐵線路判斷：
-      // 車次號碼為偶數 (雙數) => 北上 / 順行 (例如 2214 次往基隆)
-      // 車次號碼為奇數 (單數) => 南下 / 逆行 (例如 2033 次往彰化)
+      // 優先使用後端回傳的 Direction / direction（0 順行，1 逆行）。
       trains.forEach(train => {
         const dir = Number(train.direction ?? train.Direction);
         if ((train.direction ?? train.Direction) != null && dir === 0) {
